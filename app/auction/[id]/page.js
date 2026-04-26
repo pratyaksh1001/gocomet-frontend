@@ -76,13 +76,10 @@ export default function AuctionPage() {
         if (role !== "supplier" && role !== "buyer") return router.push("/");
     }, [role, router]);
 
-    // 🔁 FETCH DATA
-    // 🔁 INITIAL LOAD + POLLING
+    // Initial load for auction metadata only (not bids - those come via WS SYNC)
     useEffect(() => {
         if (!id) return;
         fetchData();
-        const poll = setInterval(fetchData, 10000);
-        return () => clearInterval(poll);
     }, [id]);
 
     // ⏱ TIMER (EXTENSION WINDOW)
@@ -144,6 +141,12 @@ export default function AuctionPage() {
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
 
+                // 📦 INITIAL SYNC - all existing bids
+                if (data.type === "SYNC") {
+                    setBids(data.bids || []);
+                    if (data.highest) setBestBid(data.highest);
+                }
+
                 // 🏆 BID UPDATE
                 if (data.type === "UPDATE") {
                     setBestBid(data.highest);
@@ -153,7 +156,7 @@ export default function AuctionPage() {
                                 b.bid_amount === data.new_bid.bid_amount &&
                                 b.owner_email === data.new_bid.owner_email,
                         );
-                        return exists ? prev : [...prev, data.new_bid];
+                        return exists ? prev : [data.new_bid, ...prev];
                     });
                 }
 
@@ -240,9 +243,6 @@ export default function AuctionPage() {
                 auction_id: id,
             }),
         );
-
-        // Immediately refresh to show the bid without waiting for WS broadcast
-        setTimeout(fetchData, 800);
     };
 
     if (loading) return <div className="p-6">Loading...</div>;
