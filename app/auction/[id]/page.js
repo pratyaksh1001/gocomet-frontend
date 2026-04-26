@@ -60,10 +60,14 @@ export default function AuctionPage() {
                               : "active",
                     );
                     if (data.rfq.current_end_time) {
-                        setExtensionEndTime(new Date(data.rfq.current_end_time));
+                        setExtensionEndTime(
+                            new Date(data.rfq.current_end_time),
+                        );
                     }
                     if (typeof data.rfq.time_remaining === "number") {
-                        setTimeLeft(Math.max(0, data.rfq.time_remaining * 1000));
+                        setTimeLeft(
+                            Math.max(0, data.rfq.time_remaining * 1000),
+                        );
                     }
 
                     if (data.rfq.bids?.length > 0) {
@@ -117,7 +121,8 @@ export default function AuctionPage() {
     useEffect(() => {
         if (!id || (role !== "supplier" && role !== "buyer")) return;
 
-        const ws = new WebSocket(`ws://127.0.0.1:8000/auction/ws/${id}`);
+        const wsBase = process.env.BACKEND_WS || "ws://127.0.0.1:8000";
+        const ws = new WebSocket(`${wsBase}/auction/ws/${id}`);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -311,7 +316,11 @@ export default function AuctionPage() {
                                     />
                                 </div>
 
-                                <Button className="w-full" onClick={handleBid} disabled={!canBid}>
+                                <Button
+                                    className="w-full"
+                                    onClick={handleBid}
+                                    disabled={!canBid}
+                                >
                                     Submit Bid
                                 </Button>
                             </CardContent>
