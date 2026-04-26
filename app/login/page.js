@@ -47,14 +47,26 @@ export default function LoginPage() {
                 return;
             }
 
+            // ✅ Store token
             Cookies.set("token", data.token, {
                 expires: 1,
                 sameSite: "Lax",
             });
 
+            // ✅ Store username
             Cookies.set("username", data.username, {
                 expires: 1,
+                sameSite: "Lax",
             });
+
+            // ✅ NEW: Store role
+            Cookies.set("role", data.role, {
+                expires: 1,
+                sameSite: "Lax",
+            });
+
+            // 🔍 Debug (optional)
+            console.log("Role:", data.role);
 
             // redirect
             router.push("/");

@@ -16,6 +16,7 @@ export default function RegisterPage() {
         username: "",
         email: "",
         password: "",
+        role: "",
     });
 
     const [loading, setLoading] = useState(false);
@@ -31,7 +32,7 @@ export default function RegisterPage() {
     const handleRegister = async () => {
         setError("");
 
-        if (!form.username || !form.email || !form.password) {
+        if (!form.username || !form.email || !form.password || !form.role) {
             setError("All fields are required");
             return;
         }
@@ -47,16 +48,15 @@ export default function RegisterPage() {
                 return;
             }
 
-            // success
             alert("Registered successfully");
 
             setForm({
                 username: "",
                 email: "",
                 password: "",
+                role: "",
             });
 
-            // ✅ correct navigation
             router.push("/login");
         } catch (err) {
             setError("Something went wrong");
@@ -79,6 +79,7 @@ export default function RegisterPage() {
                 </CardHeader>
 
                 <CardContent className="space-y-4">
+                    {/* Username */}
                     <div className="space-y-1">
                         <Label>Username</Label>
                         <Input
@@ -88,6 +89,7 @@ export default function RegisterPage() {
                         />
                     </div>
 
+                    {/* Email */}
                     <div className="space-y-1">
                         <Label>Email</Label>
                         <Input
@@ -98,6 +100,7 @@ export default function RegisterPage() {
                         />
                     </div>
 
+                    {/* Password */}
                     <div className="space-y-1">
                         <Label>Password</Label>
                         <Input
@@ -108,9 +111,25 @@ export default function RegisterPage() {
                         />
                     </div>
 
-                    {/* 🔴 Error Message */}
+                    {/* 🆕 Role Dropdown */}
+                    <div className="space-y-1">
+                        <Label>Role</Label>
+                        <select
+                            name="role"
+                            value={form.role}
+                            onChange={handleChange}
+                            className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                        >
+                            <option value="">Select Role</option>
+                            <option value="supplier">Supplier</option>
+                            <option value="buyer">Buyer</option>
+                        </select>
+                    </div>
+
+                    {/* Error */}
                     {error && <p className="text-sm text-red-500">{error}</p>}
 
+                    {/* Submit */}
                     <Button
                         className="w-full"
                         onClick={handleRegister}
