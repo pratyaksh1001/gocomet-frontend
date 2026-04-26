@@ -121,7 +121,7 @@ export default function AuctionPage() {
     useEffect(() => {
         if (!id || (role !== "supplier" && role !== "buyer")) return;
 
-        const wsBase = process.env.BACKEND_WS || "ws://127.0.0.1:8000";
+        const wsBase = process.env.backendws || "ws://127.0.0.1:8000";
         const ws = new WebSocket(`${wsBase}/auction/ws/${id}`);
         wsRef.current = ws;
 
