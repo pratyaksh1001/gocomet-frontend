@@ -133,12 +133,12 @@ export default function AuctionPage() {
             ws.onopen = () => {
                 ws.send(JSON.stringify({ type: "AUTH", token: Cookies.get("token") }));
 
-                // Send ping every 5s to prevent idle timeout
+                // Send ping every 2s to prevent idle timeout
                 pingInterval = setInterval(() => {
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ type: "PING" }));
                     }
-                }, 5000);
+                }, 2000);
             };
 
             ws.onmessage = (event) => {
@@ -366,7 +366,7 @@ export default function AuctionPage() {
                         <Card className="border-green-500">
                             <CardContent className="p-4">
                                 <h3 className="text-green-600 font-semibold">
-                                    Best Bid
+                                    🏆 Best Bid
                                 </h3>
                                 <p>{bestBid.owner_email}</p>
                                 <p className="text-lg font-bold">
@@ -377,23 +377,32 @@ export default function AuctionPage() {
                     )}
 
                     <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                        {bids.map((b, idx) => (
-                            <Card key={idx}>
-                                <CardContent className="p-3 text-sm space-y-1">
-                                    <p className="font-medium">
-                                        {b.owner_email}
-                                    </p>
-                                    <p>₹{b.bid_amount}</p>
-                                    <p>Freight Charges: {b.freight_charges}</p>
-                                    <p>Origin Charges: {b.origin_charges}</p>
-                                    <p>
-                                        Destination Charges:{" "}
-                                        {b.destination_charges}
-                                    </p>
-                                    <p>Transit Time: {b.transit_time}</p>
-                                </CardContent>
-                            </Card>
-                        ))}
+                        {[...bids]
+                            .sort(
+                                (a, b) =>
+                                    new Date(b.bid_time) -
+                                    new Date(a.bid_time),
+                            )
+                            .map((b, idx) => (
+                                <Card key={idx}>
+                                    <CardContent className="p-3 text-sm space-y-1">
+                                        <p className="font-medium">
+                                            {b.owner_email}
+                                        </p>
+                                        <p>₹{b.bid_amount}</p>
+                                        <p>Freight Charges: {b.freight_charges}</p>
+                                        <p>Origin Charges: {b.origin_charges}</p>
+                                        <p>
+                                            Destination Charges:{" "}
+                                            {b.destination_charges}
+                                        </p>
+                                        <p>Transit Time: {b.transit_time}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(b.bid_time).toLocaleTimeString()}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            ))}
                     </div>
                 </div>
             </div>
