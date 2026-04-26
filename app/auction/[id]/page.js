@@ -85,6 +85,10 @@ export default function AuctionPage() {
         };
 
         fetchData();
+
+        // Fallback poll every 10 seconds to keep bids in sync
+        const poll = setInterval(fetchData, 10000);
+        return () => clearInterval(poll);
     }, [id]);
 
     // ⏱ TIMER (EXTENSION WINDOW)
@@ -198,9 +202,14 @@ export default function AuctionPage() {
         }
 
         const bid_amount =
-            form.freight_charges +
-            form.origin_charges +
-            form.destination_charges;
+            (Number(form.freight_charges) || 0) +
+            (Number(form.origin_charges) || 0) +
+            (Number(form.destination_charges) || 0);
+
+        if (bid_amount <= 0) {
+            alert("Bid amount must be greater than 0");
+            return;
+        }
 
         wsRef.current.send(
             JSON.stringify({
