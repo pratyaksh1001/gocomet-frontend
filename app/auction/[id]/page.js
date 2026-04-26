@@ -125,51 +125,77 @@ export default function AuctionPage() {
     useEffect(() => {
         if (!id || (role !== "supplier" && role !== "buyer")) return;
 
-        const wsBase = "wss://gocomet-backend-pratyaksh10016605-hbawhdpe.leapcell.dev";
-        const ws = new WebSocket(`${wsBase}/auction/ws/${id}`);
-        wsRef.current = ws;
+        let ws;
+        let pingInterval;
+        let reconnectTimeout;
+        let unmounted = false;
 
-        ws.onopen = () => {
-            ws.send(
-                JSON.stringify({
-                    type: "AUTH",
-                    token: Cookies.get("token"),
-                }),
-            );
+        const connect = () => {
+            if (unmounted) return;
+
+            ws = new WebSocket(`wss://gocomet-backend-pratyaksh10016605-hbawhdpe.leapcell.dev/auction/ws/${id}`);
+            wsRef.current = ws;
+
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ type: "AUTH", token: Cookies.get("token") }));
+
+                // Send ping every 5s to prevent idle timeout
+                pingInterval = setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: "PING" }));
+                    }
+                }, 5000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                // 🏆 BID UPDATE
+                if (data.type === "UPDATE") {
+                    setBestBid(data.highest);
+                    setBids((prev) => {
+                        const exists = prev.some(
+                            (b) =>
+                                b.bid_amount === data.new_bid.bid_amount &&
+                                b.owner_email === data.new_bid.owner_email,
+                        );
+                        return exists ? prev : [...prev, data.new_bid];
+                    });
+                }
+
+                // ⏱ RESET TIMER FROM BACKEND
+                if (data.type === "TIME_UPDATE") {
+                    if (data.current_end_time) {
+                        setExtensionEndTime(new Date(data.current_end_time));
+                    }
+                    if (typeof data.time_remaining === "number") {
+                        setTimeLeft(Math.max(0, data.time_remaining * 1000));
+                    }
+                    if (data.status) {
+                        setAuctionStatus(data.status);
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                clearInterval(pingInterval);
+                // Auto-reconnect after 2 seconds
+                if (!unmounted) {
+                    reconnectTimeout = setTimeout(connect, 2000);
+                }
+            };
+
+            ws.onerror = () => ws.close();
         };
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+        connect();
 
-            // 🏆 BID UPDATE
-            if (data.type === "UPDATE") {
-                setBestBid(data.highest);
-
-                setBids((prev) => {
-                    const exists = prev.some(
-                        (b) =>
-                            b.bid_amount === data.new_bid.bid_amount &&
-                            b.owner_email === data.new_bid.owner_email,
-                    );
-                    return exists ? prev : [...prev, data.new_bid];
-                });
-            }
-
-            // ⏱ RESET TIMER FROM BACKEND
-            if (data.type === "TIME_UPDATE") {
-                if (data.current_end_time) {
-                    setExtensionEndTime(new Date(data.current_end_time));
-                }
-                if (typeof data.time_remaining === "number") {
-                    setTimeLeft(Math.max(0, data.time_remaining * 1000));
-                }
-                if (data.status) {
-                    setAuctionStatus(data.status);
-                }
-            }
+        return () => {
+            unmounted = true;
+            clearInterval(pingInterval);
+            clearTimeout(reconnectTimeout);
+            if (ws) ws.close();
         };
-
-        return () => ws.close();
     }, [id, role]);
 
     // ✍️ HANDLE INPUT
