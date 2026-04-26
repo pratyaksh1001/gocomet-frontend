@@ -121,7 +121,8 @@ export default function AuctionPage() {
     useEffect(() => {
         if (!id || (role !== "supplier" && role !== "buyer")) return;
 
-        const wsBase = process.env.backendws || "ws://127.0.0.1:8000";
+        const wsBase =
+            "wss://gocomet-backend-pratyaksh10016605-hbawhdpe.leapcell.dev";
         const ws = new WebSocket(`${wsBase}/auction/ws/${id}`);
         wsRef.current = ws;
 

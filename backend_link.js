@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-    baseURL: process.env.BACKEND_URL || "http://127.0.0.1:8000/",
+    baseURL: "https://gocomet-backend-pratyaksh10016605-hbawhdpe.leapcell.dev",
     headers: {
         "Content-Type": "application/json",
     },
