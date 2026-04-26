@@ -34,6 +34,42 @@ export default function AuctionPage() {
 
     const role = Cookies.get("role");
 
+    // 🔄 FETCH DATA (shared so handleBid can also call it)
+    const fetchData = async () => {
+        try {
+            const res = await api.get(`/auction/${id}`);
+            const data = res.data;
+
+            if (data.rfq) {
+                setRfq(data.rfq);
+                setBids(data.rfq.bids || []);
+                setAuctionStatus(
+                    data.rfq.status === 2
+                        ? "forced"
+                        : data.rfq.status === 0
+                          ? "closed"
+                          : "active",
+                );
+                if (data.rfq.current_end_time) {
+                    setExtensionEndTime(new Date(data.rfq.current_end_time));
+                }
+                if (typeof data.rfq.time_remaining === "number") {
+                    setTimeLeft(Math.max(0, data.rfq.time_remaining * 1000));
+                }
+                if (data.rfq.bids?.length > 0) {
+                    const best = data.rfq.bids.reduce((min, b) =>
+                        b.bid_amount < min.bid_amount ? b : min,
+                    );
+                    setBestBid(best);
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // 🔐 ROLE CHECK
     useEffect(() => {
         if (!role) return router.push("/login");
@@ -41,52 +77,10 @@ export default function AuctionPage() {
     }, [role, router]);
 
     // 🔁 FETCH DATA
+    // 🔁 INITIAL LOAD + POLLING
     useEffect(() => {
         if (!id) return;
-
-        const fetchData = async () => {
-            try {
-                const res = await api.get(`/auction/${id}`);
-                const data = res.data;
-
-                if (data.rfq) {
-                    setRfq(data.rfq);
-                    setBids(data.rfq.bids || []);
-                    setAuctionStatus(
-                        data.rfq.status === 2
-                            ? "forced"
-                            : data.rfq.status === 0
-                              ? "closed"
-                              : "active",
-                    );
-                    if (data.rfq.current_end_time) {
-                        setExtensionEndTime(
-                            new Date(data.rfq.current_end_time),
-                        );
-                    }
-                    if (typeof data.rfq.time_remaining === "number") {
-                        setTimeLeft(
-                            Math.max(0, data.rfq.time_remaining * 1000),
-                        );
-                    }
-
-                    if (data.rfq.bids?.length > 0) {
-                        const best = data.rfq.bids.reduce((min, b) =>
-                            b.bid_amount < min.bid_amount ? b : min,
-                        );
-                        setBestBid(best);
-                    }
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchData();
-
-        // Fallback poll every 10 seconds to keep bids in sync
         const poll = setInterval(fetchData, 10000);
         return () => clearInterval(poll);
     }, [id]);
@@ -246,6 +240,9 @@ export default function AuctionPage() {
                 auction_id: id,
             }),
         );
+
+        // Immediately refresh to show the bid without waiting for WS broadcast
+        setTimeout(fetchData, 800);
     };
 
     if (loading) return <div className="p-6">Loading...</div>;
