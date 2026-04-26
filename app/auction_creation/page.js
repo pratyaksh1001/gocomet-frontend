@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { api } from "@/backend_link";
 
@@ -10,16 +11,34 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 export default function CreateAuctionPage() {
+    const router = useRouter();
+
     const [form, setForm] = useState({
         rfq_name: "",
         start_time: "",
         forced_close_time: "",
         extension_duration: "",
         pickup_date: "",
+        trigger: "", // 🆕 NEW FIELD
     });
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    // 🔐 ROLE CHECK
+    useEffect(() => {
+        const token = Cookies.get("token");
+        const role = Cookies.get("role");
+
+        if (!token) {
+            router.push("/login");
+            return;
+        }
+
+        if (role === "supplier") {
+            router.push("/");
+        }
+    }, [router]);
 
     const handleChange = (e) => {
         setForm({
@@ -37,6 +56,7 @@ export default function CreateAuctionPage() {
             forced_close_time,
             extension_duration,
             pickup_date,
+            trigger,
         } = form;
 
         if (
@@ -44,7 +64,8 @@ export default function CreateAuctionPage() {
             !start_time ||
             !forced_close_time ||
             !extension_duration ||
-            !pickup_date
+            !pickup_date ||
+            !trigger
         ) {
             setError("All fields are required");
             return;
@@ -67,6 +88,7 @@ export default function CreateAuctionPage() {
         try {
             const res = await api.post("/auction", {
                 ...form,
+                trigger: Number(trigger), // 🔥 send as number
                 token,
             });
 
@@ -85,6 +107,7 @@ export default function CreateAuctionPage() {
                 forced_close_time: "",
                 extension_duration: "",
                 pickup_date: "",
+                trigger: "",
             });
         } catch (err) {
             setError("Something went wrong");
@@ -104,6 +127,7 @@ export default function CreateAuctionPage() {
                 </CardHeader>
 
                 <CardContent className="space-y-4">
+                    {/* Name */}
                     <div className="space-y-1">
                         <Label>Name</Label>
                         <Input
@@ -113,6 +137,7 @@ export default function CreateAuctionPage() {
                         />
                     </div>
 
+                    {/* Start */}
                     <div className="space-y-1">
                         <Label>Start Time</Label>
                         <Input
@@ -123,6 +148,7 @@ export default function CreateAuctionPage() {
                         />
                     </div>
 
+                    {/* End */}
                     <div className="space-y-1">
                         <Label>Forced Close Time</Label>
                         <Input
@@ -133,6 +159,7 @@ export default function CreateAuctionPage() {
                         />
                     </div>
 
+                    {/* Extension */}
                     <div className="space-y-1">
                         <Label>Extension Duration (minutes)</Label>
                         <Input
@@ -143,7 +170,7 @@ export default function CreateAuctionPage() {
                         />
                     </div>
 
-                    {/* 🆕 Pickup Date */}
+                    {/* Pickup */}
                     <div className="space-y-1">
                         <Label>Pickup Date</Label>
                         <Input
@@ -154,8 +181,28 @@ export default function CreateAuctionPage() {
                         />
                     </div>
 
+                    {/* 🆕 Trigger */}
+                    <div className="space-y-1">
+                        <Label>Extension Trigger</Label>
+                        <select
+                            name="trigger"
+                            value={form.trigger}
+                            onChange={handleChange}
+                            className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                        >
+                            <option value="">Select Trigger</option>
+                            <option value="1">
+                                Extend if best bid changes
+                            </option>
+                            <option value="2">Extend if ranking changes</option>
+                            <option value="3">Extend on any new bid</option>
+                        </select>
+                    </div>
+
+                    {/* Error */}
                     {error && <p className="text-sm text-red-500">{error}</p>}
 
+                    {/* Submit */}
                     <Button
                         className="w-full"
                         onClick={handleCreate}

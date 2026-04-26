@@ -32,7 +32,17 @@ export default function HomePage() {
     };
 
     useEffect(() => {
-        fetchData("active");
+        api.get("/home?status=active")
+            .then((res) => {
+                const data = res.data;
+                if (data.success) {
+                    setAuctions(data.result);
+                    setStatus("active");
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+            });
     }, []);
 
     return (
@@ -53,8 +63,8 @@ export default function HomePage() {
                 </Button>
 
                 <Button
-                    variant={status === "forced_closed" ? "default" : "outline"}
-                    onClick={() => fetchData("forced_closed")}
+                    variant={status === "forced" ? "default" : "outline"}
+                    onClick={() => fetchData("forced")}
                 >
                     Forced Closed
                 </Button>

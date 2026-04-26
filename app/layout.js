@@ -61,12 +61,12 @@ export default function RootLayout({ children }) {
                             Home
                         </Link>
                         <Link
-                            href="/create-auction"
+                            href="/auction_creation"
                             className="hover:text-primary"
                         >
                             Create
                         </Link>
-                        <Link href="/auctions" className="hover:text-primary">
+                        <Link href="/" className="hover:text-primary">
                             Auctions
                         </Link>
                     </div>
